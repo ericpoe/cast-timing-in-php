@@ -5,6 +5,7 @@ namespace App\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Stopwatch\Stopwatch;
@@ -17,7 +18,8 @@ class IntCastCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', 10000);
+        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000');
+        $this->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -26,6 +28,7 @@ class IntCastCommand extends Command
 
         $quantity = (int) $input->getArgument('quantity');
 
+        $io->note(sprintf('Casting an array of %s integer strings to int', $this->getLocalizedNumber($quantity)));
         $items = range(1, $quantity);
         $items = array_map(function ($value) {
             return (int) $value;
@@ -34,35 +37,28 @@ class IntCastCommand extends Command
         $tmp = null;
         $stopwatch = new Stopwatch(true);
 
-        $stopwatch->reset();
-        $stopwatch->start('(int) cast');
-        foreach ($items as $item) {
-            $tmp = (int) $item;
+        for ($i = 0; $i < (int) $input->getOption('iterations'); $i++) {
+            $stopwatch->reset();
+            $stopwatch->start('(int) cast');
+            foreach ($items as $item) {
+                $tmp = (int)$item;
+            }
+            $tradCastEvent = $stopwatch->stop('(int) cast');
+
+            $stopwatch->reset();
+            $stopwatch->start('intval()');
+            foreach ($items as $item) {
+                $tmp = intval($item);
+            }
+            $intvalCastEvent = $stopwatch->stop('intval()');
+
+            $message = $this->getMessage(
+                $intvalCastEvent,
+                $tradCastEvent
+            );
+
+            $output->write($message, true);
         }
-        $tradCastEvent = $stopwatch->stop('(int) cast');
-
-        $stopwatch->reset();
-        $stopwatch->start('intval()');
-        foreach ($items as $item) {
-            $tmp = intval($item);
-        }
-        $intvalCastEvent = $stopwatch->stop('intval()');
-
-        [$fasterEvent, $slowerEvent] = $this->getSpeedComparisons($intvalCastEvent, $tradCastEvent);
-
-        [$memoryHogEvent, $memoryBirdEvent] = $this->getMemoryComparisons($intvalCastEvent, $tradCastEvent);
-
-        $message = $this->getMessage(
-            $quantity,
-            $intvalCastEvent,
-            $tradCastEvent,
-            $fasterEvent,
-            $slowerEvent,
-            $memoryBirdEvent,
-            $memoryHogEvent
-        );
-
-        $output->write($message, true);
 
         $io->success('Done');
 
@@ -70,31 +66,26 @@ class IntCastCommand extends Command
     }
 
     public function getMessage(
-        int $quantity,
         StopwatchEvent $intvalCastEvent,
-        StopwatchEvent $tradCastEvent,
-        ?StopwatchEvent $fasterEvent,
-        ?StopwatchEvent $slowerEvent,
-        ?StopwatchEvent $memoryBirdEvent,
-        ?StopwatchEvent $memoryHogEvent
+        StopwatchEvent $tradCastEvent
     ): string {
-        $formattedQuantity = $this->getLocalizedNumber($quantity);
-        $formattedIntValCastDur = $this->getLocalizedNumber($intvalCastEvent->getDuration() / 1000);
-        $formattedTradCastDur = $this->getLocalizedNumber($tradCastEvent->getDuration() / 1000);
+        $formattedIntValCastDur = $this->getLocalizedNumber($intvalCastEvent->getDuration());
+        $formattedTradCastDur = $this->getLocalizedNumber($tradCastEvent->getDuration());
         $formattedIntValCastMem = $this->getLocalizedNumber($intvalCastEvent->getMemory() / 1024);
         $formattedTradCastMem = $this->getLocalizedNumber($tradCastEvent->getMemory() / 1024);
 
         $message = <<<TPL
-Casting an array of $formattedQuantity integer strings to int
 =============================================
-intval() casting   time: $formattedIntValCastDur s
-(int) casting      time: $formattedTradCastDur s
+intval() casting   time: $formattedIntValCastDur ms
+(int) casting      time: $formattedTradCastDur ms
 
 intval() casting memory: $formattedIntValCastMem KB
 (int) casting    memory: $formattedTradCastMem KB
 
 TPL;
 
+        [$fasterEvent, $slowerEvent] = $this->getSpeedComparisons($intvalCastEvent, $tradCastEvent);
+        [$memoryHogEvent, $memoryBirdEvent] = $this->getMemoryComparisons($intvalCastEvent, $tradCastEvent);
 
         if ($slowerEvent && $fasterEvent && $fasterEvent->getDuration()) {
             $speedIncrease = ($slowerEvent->getDuration()) / $fasterEvent->getDuration();
