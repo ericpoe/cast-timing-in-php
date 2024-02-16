@@ -17,15 +17,14 @@ class IntCastCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast');
+        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', 10000);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $quantity = $input->getArgument('quantity') ?? 10000;
-        $quantity = (int) $quantity;
+        $quantity = (int) $input->getArgument('quantity');
 
         $items = range(1, $quantity);
         $items = array_map(function ($value) {
