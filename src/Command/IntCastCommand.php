@@ -17,16 +17,14 @@ class IntCastCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast')
-        ;
+        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $quantity = $input->getArgument('quantity') ?? 100;
+        $quantity = $input->getArgument('quantity') ?? 10000;
         $quantity = (int) $quantity;
 
         $items = range(1, $quantity);
@@ -65,7 +63,9 @@ class IntCastCommand extends Command
             $memoryHogEvent
         );
 
-        $io->success(sprintf("%s\n", $message));
+        $output->write($message, true);
+
+        $io->success('Done');
 
         return Command::SUCCESS;
     }
@@ -79,25 +79,23 @@ class IntCastCommand extends Command
         ?StopwatchEvent $memoryBirdEvent,
         ?StopwatchEvent $memoryHogEvent
     ): string {
-        $format = \NumberFormatter::create(\Locale::getDefault(), \NumberFormatter::DECIMAL);
+        $formattedQuantity = $this->getLocalizedNumber($quantity);
+        $formattedIntValCastDur = $this->getLocalizedNumber($intvalCastEvent->getDuration() / 1000);
+        $formattedTradCastDur = $this->getLocalizedNumber($tradCastEvent->getDuration() / 1000);
+        $formattedIntValCastMem = $this->getLocalizedNumber($intvalCastEvent->getMemory() / 1024);
+        $formattedTradCastMem = $this->getLocalizedNumber($tradCastEvent->getMemory() / 1024);
 
-        $message = sprintf(
-            <<<TPL
-Casting an array of %s integer strings to int
+        $message = <<<TPL
+Casting an array of $formattedQuantity integer strings to int
 =============================================
-intval() casting   time: %s s
-(int) casting      time: %s s
+intval() casting   time: $formattedIntValCastDur s
+(int) casting      time: $formattedTradCastDur s
 
-intval() casting memory: %s KB
-(int) casting    memory: %s KB
+intval() casting memory: $formattedIntValCastMem KB
+(int) casting    memory: $formattedTradCastMem KB
 
-TPL,
-            $format->format($quantity),
-            $format->format($intvalCastEvent->getDuration() / 1000),
-            $format->format($tradCastEvent->getDuration() / 1000),
-            $format->format($intvalCastEvent->getMemory() / 1024),
-            $format->format($tradCastEvent->getMemory() / 1024)
-        );
+TPL;
+
 
         if ($slowerEvent && $fasterEvent && $fasterEvent->getDuration()) {
             $speedIncrease = ($slowerEvent->getDuration()) / $fasterEvent->getDuration();
@@ -147,7 +145,7 @@ TPL,
             $fasterEvent = $intvalCastEvent;
             $slowerEvent = $tradCastEvent;
         }
-        return array($fasterEvent, $slowerEvent);
+        return [$fasterEvent, $slowerEvent];
     }
 
     /**
@@ -165,6 +163,17 @@ TPL,
             $memoryBirdEvent = $intvalCastEvent;
         }
 
-        return array($memoryHogEvent, $memoryBirdEvent);
+        return [$memoryHogEvent, $memoryBirdEvent];
+    }
+
+    /**
+     * @param int|float $number
+     * @return string|false String if it can be formatted, false if not
+     */
+    protected function getLocalizedNumber($number)
+    {
+        $locale = \Locale::getDefault() === "en_US_POSIX" ? 'en_US' : \Locale::getDefault();
+
+        return \NumberFormatter::create($locale, \NumberFormatter::DECIMAL)->format($number);
     }
 }
