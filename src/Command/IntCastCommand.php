@@ -172,7 +172,7 @@ TPL;
      */
     protected function getLocalizedNumber($number)
     {
-        $locale = \Locale::getDefault() === "en_US_POSIX" ? 'en_US' : \Locale::getDefault();
+        $locale = \Locale::getDefault() === "en_US_POSIX" ? 'en-US' : \Locale::getDefault();
 
         return \NumberFormatter::create($locale, \NumberFormatter::DECIMAL)->format($number);
     }
