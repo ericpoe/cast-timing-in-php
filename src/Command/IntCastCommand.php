@@ -2,12 +2,15 @@
 
 namespace App\Command;
 
+use League\Csv\Reader;
+use League\Csv\Writer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Stopwatch\Stopwatch;
 use Symfony\Component\Stopwatch\StopwatchEvent;
 
@@ -20,6 +23,7 @@ class IntCastCommand extends Command
     {
         $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000');
         $this->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1');
+        $this->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -52,12 +56,12 @@ class IntCastCommand extends Command
             }
             $intvalCastEvent = $stopwatch->stop('intval()');
 
-            $message = $this->getMessage(
+            $this->createResults(
+                $input,
+                $output,
                 $intvalCastEvent,
                 $tradCastEvent
             );
-
-            $output->write($message, true);
         }
 
         $io->success('Done');
@@ -65,10 +69,24 @@ class IntCastCommand extends Command
         return Command::SUCCESS;
     }
 
-    public function getMessage(
+    protected function createResults(
+        InputInterface $input,
+        OutputInterface $output,
         StopwatchEvent $intvalCastEvent,
         StopwatchEvent $tradCastEvent
-    ): string {
+    ): void {
+        if ($input->getOption('csv-path')) {
+            $this->writeToCsv($input, $intvalCastEvent, $tradCastEvent);
+        } else {
+            $this->writeToScreen($output, $intvalCastEvent, $tradCastEvent);
+        }
+    }
+
+    public function writeToScreen(
+        OutputInterface $output,
+        StopwatchEvent $intvalCastEvent,
+        StopwatchEvent $tradCastEvent
+    ): void {
         $formattedIntValCastDur = $this->getLocalizedNumber($intvalCastEvent->getDuration());
         $formattedTradCastDur = $this->getLocalizedNumber($tradCastEvent->getDuration());
         $formattedIntValCastMem = $this->getLocalizedNumber($intvalCastEvent->getMemory() / 1024);
@@ -118,13 +136,57 @@ TPL;
                 $tradCastEvent->getName()
             );
         }
-        return $message;
+
+        $output->write($message, true);
+    }
+
+    protected function writeToCsv(
+        InputInterface $input,
+        StopwatchEvent $intvalCastEvent,
+        StopwatchEvent $tradCastEvent
+    ): void {
+        $header = [
+            'sample size',
+            sprintf('duration %s', $intvalCastEvent->getName()),
+            sprintf('duration %s', $tradCastEvent->getName()),
+            sprintf('memory %s', $intvalCastEvent->getName()),
+            sprintf('memory %s', $tradCastEvent->getName())
+        ];
+        $line = [
+            (int) $input->getArgument('quantity'),
+            (float) $intvalCastEvent->getDuration(),
+            (float) $tradCastEvent->getDuration(),
+            $intvalCastEvent->getMemory(),
+            $tradCastEvent->getMemory(),
+        ];
+
+        /** @var string $path */
+        $path = $input->getOption('csv-path');
+
+        $filesystem = new Filesystem();
+        if (!$filesystem->exists($path)) {
+            $filesystem->touch($path);
+        }
+
+        $csvReader = Reader::createFromPath($path);
+        $csvReader->setHeaderOffset(0);
+
+        $csvWriter = Writer::createFromPath($path, 'a+');
+
+        // If this is a new file
+        if (filesize($path) === 0 && $csvReader->getContent() === '') {
+            $csvWriter->insertOne($header);
+        }
+
+        $csvWriter->insertOne($line);
+
+//        $csvWriter->output($path);
     }
 
     /**
      * @return null[]|StopwatchEvent[]
      */
-    public function getSpeedComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
+    protected function getSpeedComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
     {
         $fasterEvent = null;
         $slowerEvent = null;
@@ -141,7 +203,7 @@ TPL;
     /**
      * @return null[]|StopwatchEvent[]
      */
-    public function getMemoryComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
+    protected function getMemoryComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
     {
         $memoryHogEvent = null;
         $memoryBirdEvent = null;
