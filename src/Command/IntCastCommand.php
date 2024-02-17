@@ -24,6 +24,7 @@ class IntCastCommand extends Command
         $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000');
         $this->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1');
         $this->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results');
+        $this->addOption('from-type', 't', InputOption::VALUE_OPTIONAL, 'Cast from "int", "float", or "string"', 'int');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -32,11 +33,19 @@ class IntCastCommand extends Command
 
         $quantity = (int) $input->getArgument('quantity');
 
-        $io->note(sprintf('Casting an array of %s integer strings to int', $this->getLocalizedNumber($quantity)));
-        $items = range(1, $quantity);
-        $items = array_map(function ($value) {
-            return (int) $value;
-        }, $items);
+        $type = strtolower($input->getOption('from-type'));
+        if (!in_array($type, ['float', 'int', 'string'])) {
+            $type = 'int';
+        }
+
+        $io->note(
+            sprintf(
+                'Creating an array of %s %ss to cast',
+                strtolower($this->getLocalizedNumber($quantity)),
+                $type
+            )
+        );
+        $items = $this->getItemsFromType($quantity, $type);
 
         $tmp = null;
         $stopwatch = new Stopwatch(true);
@@ -80,6 +89,25 @@ class IntCastCommand extends Command
         } else {
             $this->writeToScreen($output, $intvalCastEvent, $tradCastEvent);
         }
+    }
+
+    public function getItemsFromType(int $quantity, string $type = 'int'): array
+    {
+        if (strtolower($type) === 'float') {
+            return array_map(function ($value) {
+                return (float) $value;
+            },
+                range(1.1, $quantity + 1));
+        }
+
+        if (strtolower($type) === 'string') {
+            return  array_map(function ($value) {
+                return sprintf('%dLuftBalloons', $value);
+            }, range(1, $quantity));
+        }
+
+        // default type is 'int'
+        return range(1, $quantity);
     }
 
     public function writeToScreen(
@@ -179,8 +207,6 @@ TPL;
         }
 
         $csvWriter->insertOne($line);
-
-//        $csvWriter->output($path);
     }
 
     /**
