@@ -39,14 +39,14 @@ class IntCaseCommandOptionFromTypeTest extends TestCase
     {
         $items = $this->command->getItemsFromType(2, 'float');
         $this->assertIsFloat($items[1]);
-        $this->assertEquals(2.1, $items[1]);
+        $this->assertEquals(1.1, $items[1]);
     }
 
     public function testGetItemsFromTypeMixedCaseFloat(): void
     {
         $items = $this->command->getItemsFromType(2, 'fLoAt');
         $this->assertIsFloat($items[1]);
-        $this->assertEquals(2.1, $items[1]);
+        $this->assertEquals(1.1, $items[1]);
     }
 
     public function testGetItemsFromTypeString(): void

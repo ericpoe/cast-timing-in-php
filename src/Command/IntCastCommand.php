@@ -93,14 +93,16 @@ class IntCastCommand extends Command
 
     public function getItemsFromType(int $quantity, string $type = 'int'): array
     {
-        if (strtolower($type) === 'float') {
+        $type = strtolower($type);
+
+        if ($type === 'float') {
             return array_map(function ($value) {
                 return (float) $value;
             },
-                range(1.1, $quantity + 1));
+                range(0.1, $quantity + 0.1));
         }
 
-        if (strtolower($type) === 'string') {
+        if ($type === 'string') {
             return  array_map(function ($value) {
                 return sprintf('%dLuftBalloons', $value);
             }, range(1, $quantity));
@@ -110,7 +112,7 @@ class IntCastCommand extends Command
         return range(1, $quantity);
     }
 
-    public function writeToScreen(
+    protected function writeToScreen(
         OutputInterface $output,
         StopwatchEvent $intvalCastEvent,
         StopwatchEvent $tradCastEvent
