@@ -34,14 +34,17 @@ class IntCaseCommandTest extends KernelTestCase
         $this->assertStringContainsString(sprintf('Creating an array of %s ints to cast', $expected), $output);
     }
 
+    /**
+     * @return array<string, array<int, int|string>>
+     */
     public function quantityProvider(): array
     {
         return [
-            '1' => [1, '1'],
-            '10' => [10, '10'],
-            '100' => [100, '100'],
-            '1000' => [1000, '1,000'],
-            '10000' => [10000, '10,000'],
+            'one' => [1, '1'],
+            'ten' => [10, '10'],
+            'one hundred' => [100, '100'],
+            'one thousand' => [1000, '1,000'],
+            'ten thousand' => [10000, '10,000'],
         ];
     }
 
@@ -62,6 +65,9 @@ class IntCaseCommandTest extends KernelTestCase
         }
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
     public function typeProvider(): array
     {
         return [

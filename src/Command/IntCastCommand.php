@@ -33,7 +33,7 @@ class IntCastCommand extends Command
 
         $quantity = (int) $input->getArgument('quantity');
 
-        $type = strtolower($input->getOption('from-type'));
+        $type = $input->getOption('from-type') ? strtolower($input->getOption('from-type')) : 'int';
         if (!in_array($type, ['float', 'int', 'string'])) {
             $type = 'int';
         }
@@ -91,6 +91,9 @@ class IntCastCommand extends Command
         }
     }
 
+    /**
+     * @return array<int, int> | array<int, float> | array<int, string>
+     */
     public function getItemsFromType(int $quantity, string $type = 'int'): array
     {
         $type = strtolower($type);
@@ -248,12 +251,40 @@ TPL;
 
     /**
      * @param int|float $number
-     * @return string|false String if it can be formatted, false if not
+     * @return string
      */
-    protected function getLocalizedNumber($number)
+    protected function getLocalizedNumber($number): string
     {
         $locale = \Locale::getDefault() === "en_US_POSIX" ? 'en-US' : \Locale::getDefault();
+        \Locale::setDefault($locale);
 
-        return \NumberFormatter::create($locale, \NumberFormatter::DECIMAL)->format($number);
+        $formatted = \NumberFormatter::create($locale, \NumberFormatter::DECIMAL);
+
+        if (!$formatted instanceof \NumberFormatter) {
+            throw new \RuntimeException(
+                sprintf(
+                    'The locale of %s does not have a decimal formatter',
+                    \Locale::getDefault()
+                )
+            );
+        }
+
+        /** @var string $formattedNumber */
+        $formattedNumber = $formatted->format($number);
+
+        /**
+         * If the $number exists (zero is falsy, so must be accounted for) but cannot be formatted
+         */
+        if ($number && !$formattedNumber) {
+            throw new \RuntimeException(
+                sprintf(
+                    '%s cannot be formatted as a number using the default locale of : %s',
+                    $number,
+                    $locale
+                )
+            );
+        }
+
+        return $formattedNumber;
     }
 }
