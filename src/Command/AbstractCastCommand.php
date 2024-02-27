@@ -2,6 +2,8 @@
 
 namespace App\Command;
 
+use App\Entity\Timing;
+use Doctrine\ORM\EntityManagerInterface;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use Symfony\Component\Console\Command\Command;
@@ -14,6 +16,22 @@ use Symfony\Component\Stopwatch\StopwatchEvent;
 
 abstract class AbstractCastCommand extends Command
 {
+    /**
+     * @var EntityManagerInterface $entityManager
+     */
+    protected $entityManager;
+
+    abstract protected function getToType(): string;
+
+    /**
+     * @required
+     */
+    public function setEntityManager(EntityManagerInterface $entityManager): void
+    {
+        $this->entityManager = $entityManager;
+    }
+
+
     protected function configure(): void
     {
         $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000');
@@ -26,6 +44,7 @@ abstract class AbstractCastCommand extends Command
             'Cast from "int", "float", "string" or "num-string" (ex. "99LuftBalloons")',
             'int'
         );
+        $this->addOption('use-db', null, InputOption::VALUE_REQUIRED, 'Write to DB?', 'y');
     }
 
     public function validateFromType(string $type): string
@@ -79,24 +98,26 @@ abstract class AbstractCastCommand extends Command
     protected function createResults(
         InputInterface $input,
         OutputInterface $output,
-        StopwatchEvent $intvalCastEvent,
+        StopwatchEvent $functionCastEvent,
         StopwatchEvent $tradCastEvent
     ): void {
-        if ($input->getOption('csv-path')) {
-            $this->writeToCsv($input, $intvalCastEvent, $tradCastEvent);
+        if (strtolower($input->getOption('use-db')) === 'y') {
+            $this->writeToDb($input, $functionCastEvent, $tradCastEvent);
+        } elseif ($input->getOption('csv-path')) {
+            $this->writeToCsv($input, $functionCastEvent, $tradCastEvent);
         } else {
-            $this->writeToScreen($output, $intvalCastEvent, $tradCastEvent);
+            $this->writeToScreen($output, $functionCastEvent, $tradCastEvent);
         }
     }
 
     protected function writeToScreen(
         OutputInterface $output,
-        StopwatchEvent $intvalCastEvent,
+        StopwatchEvent $functionCastEvent,
         StopwatchEvent $tradCastEvent
     ): void {
-        $formattedIntValCastDur = $this->getLocalizedNumber($intvalCastEvent->getDuration());
+        $formattedIntValCastDur = $this->getLocalizedNumber($functionCastEvent->getDuration());
         $formattedTradCastDur = $this->getLocalizedNumber($tradCastEvent->getDuration());
-        $formattedIntValCastMem = $this->getLocalizedNumber($intvalCastEvent->getMemory() / 1024);
+        $formattedIntValCastMem = $this->getLocalizedNumber($functionCastEvent->getMemory() / 1024);
         $formattedTradCastMem = $this->getLocalizedNumber($tradCastEvent->getMemory() / 1024);
 
         $message = <<<TPL
@@ -109,8 +130,8 @@ intval() casting memory: $formattedIntValCastMem KB
 
 TPL;
 
-        [$fasterEvent, $slowerEvent] = $this->getSpeedComparisons($intvalCastEvent, $tradCastEvent);
-        [$memoryHogEvent, $memoryBirdEvent] = $this->getMemoryComparisons($intvalCastEvent, $tradCastEvent);
+        [$fasterEvent, $slowerEvent] = $this->getSpeedComparisons($functionCastEvent, $tradCastEvent);
+        [$memoryHogEvent, $memoryBirdEvent] = $this->getMemoryComparisons($functionCastEvent, $tradCastEvent);
 
         if ($slowerEvent && $fasterEvent && $fasterEvent->getDuration()) {
             $speedIncrease = ($slowerEvent->getDuration()) / $fasterEvent->getDuration();
@@ -123,7 +144,7 @@ TPL;
         } else {
             $message .= sprintf(
                 "\nThere is no discernible speed difference between %s and %s",
-                $intvalCastEvent->getName(),
+                $functionCastEvent->getName(),
                 $tradCastEvent->getName()
             );
         }
@@ -139,7 +160,7 @@ TPL;
         } else {
             $message .= sprintf(
                 "\nThere is no discernible memory difference between %s and %s",
-                $intvalCastEvent->getName(),
+                $functionCastEvent->getName(),
                 $tradCastEvent->getName()
             );
         }
@@ -149,21 +170,21 @@ TPL;
 
     protected function writeToCsv(
         InputInterface $input,
-        StopwatchEvent $intvalCastEvent,
+        StopwatchEvent $functionCastEvent,
         StopwatchEvent $tradCastEvent
     ): void {
         $header = [
             'sample size',
-            sprintf('duration %s', $intvalCastEvent->getName()),
+            sprintf('duration %s', $functionCastEvent->getName()),
             sprintf('duration %s', $tradCastEvent->getName()),
-            sprintf('memory %s', $intvalCastEvent->getName()),
+            sprintf('memory %s', $functionCastEvent->getName()),
             sprintf('memory %s', $tradCastEvent->getName())
         ];
         $line = [
             (int) $input->getArgument('quantity'),
-            (float) $intvalCastEvent->getDuration(),
+            (float) $functionCastEvent->getDuration(),
             (float) $tradCastEvent->getDuration(),
-            $intvalCastEvent->getMemory(),
+            $functionCastEvent->getMemory(),
             $tradCastEvent->getMemory(),
         ];
 
@@ -188,18 +209,44 @@ TPL;
         $csvWriter->insertOne($line);
     }
 
+    protected function writeToDb(
+        InputInterface $input,
+        StopwatchEvent $functionCastEvent,
+        StopwatchEvent $tradCastEvent
+    ): void {
+        $timing = new Timing();
+
+        $sampleSize = (int) $input->getArgument('quantity');
+
+        /** @var string $fromType */
+        $fromType = $input->getOption('from-type');
+        $toType = $this->getToType();
+
+        $timing->setFromType($fromType)
+            ->setToType($toType)
+            ->setSampleSize($sampleSize)
+            ->setFunctionCastDuration($functionCastEvent->getDuration())
+            ->setFunctionCastMemory($functionCastEvent->getMemory())
+            ->setTradCastDuration($tradCastEvent->getDuration())
+            ->setTradCastMemory($tradCastEvent->getMemory())
+        ;
+
+        $this->entityManager->persist($timing);
+        $this->entityManager->flush();
+    }
+
     /**
      * @return null[]|StopwatchEvent[]
      */
-    protected function getSpeedComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
+    protected function getSpeedComparisons(StopwatchEvent $functionCastEvent, StopwatchEvent $tradCastEvent): array
     {
         $fasterEvent = null;
         $slowerEvent = null;
-        if ($intvalCastEvent->getDuration() > $tradCastEvent->getDuration()) {
+        if ($functionCastEvent->getDuration() > $tradCastEvent->getDuration()) {
             $fasterEvent = $tradCastEvent;
-            $slowerEvent = $intvalCastEvent;
-        } elseif ($intvalCastEvent->getDuration() < $tradCastEvent->getDuration()) {
-            $fasterEvent = $intvalCastEvent;
+            $slowerEvent = $functionCastEvent;
+        } elseif ($functionCastEvent->getDuration() < $tradCastEvent->getDuration()) {
+            $fasterEvent = $functionCastEvent;
             $slowerEvent = $tradCastEvent;
         }
         return [$fasterEvent, $slowerEvent];
@@ -208,16 +255,16 @@ TPL;
     /**
      * @return null[]|StopwatchEvent[]
      */
-    protected function getMemoryComparisons(StopwatchEvent $intvalCastEvent, StopwatchEvent $tradCastEvent): array
+    protected function getMemoryComparisons(StopwatchEvent $functionCastEvent, StopwatchEvent $tradCastEvent): array
     {
         $memoryHogEvent = null;
         $memoryBirdEvent = null;
-        if ($intvalCastEvent->getMemory() > $tradCastEvent->getMemory()) {
-            $memoryHogEvent = $intvalCastEvent;
+        if ($functionCastEvent->getMemory() > $tradCastEvent->getMemory()) {
+            $memoryHogEvent = $functionCastEvent;
             $memoryBirdEvent = $tradCastEvent;
-        } elseif ($intvalCastEvent->getMemory() < $tradCastEvent->getMemory()) {
+        } elseif ($functionCastEvent->getMemory() < $tradCastEvent->getMemory()) {
             $memoryHogEvent = $tradCastEvent;
-            $memoryBirdEvent = $intvalCastEvent;
+            $memoryBirdEvent = $functionCastEvent;
         }
 
         return [$memoryHogEvent, $memoryBirdEvent];

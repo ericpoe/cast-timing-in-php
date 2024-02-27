@@ -13,6 +13,11 @@ class StringCastCommand extends AbstractCastCommand
     protected static $defaultName = 'app:string-cast';
     protected static $defaultDescription = 'Generate timings for casting strings via `(string)` and `strval()`';
 
+    protected function getToType(): string
+    {
+        return 'string';
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);

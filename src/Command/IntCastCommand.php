@@ -13,6 +13,11 @@ class IntCastCommand extends AbstractCastCommand
     protected static $defaultName = 'app:int-cast';
     protected static $defaultDescription = 'Generate timings for casting integers via `(int)` and `intval()`';
 
+    protected function getToType(): string
+    {
+        return 'int';
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);

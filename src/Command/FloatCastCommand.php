@@ -13,6 +13,11 @@ class FloatCastCommand extends AbstractCastCommand
     protected static $defaultName = 'app:float-cast';
     protected static $defaultDescription = 'Generate timings for casting floats via `(float)` and `floatval()`';
 
+    protected function getToType(): string
+    {
+        return 'float';
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
