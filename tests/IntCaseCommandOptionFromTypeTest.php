@@ -28,23 +28,9 @@ class IntCaseCommandOptionFromTypeTest extends TestCase
         $this->assertEquals(2, $items[1]);
     }
 
-    public function testGetItemsFromTypeMixedCaseInt(): void
-    {
-        $items = $this->command->getItemsFromType(2, 'InT');
-        $this->assertIsInt($items[1]);
-        $this->assertEquals(2, $items[1]);
-    }
-
     public function testGetItemsFromTypeFloat(): void
     {
         $items = $this->command->getItemsFromType(2, 'float');
-        $this->assertIsFloat($items[1]);
-        $this->assertEquals(1.1, $items[1]);
-    }
-
-    public function testGetItemsFromTypeMixedCaseFloat(): void
-    {
-        $items = $this->command->getItemsFromType(2, 'fLoAt');
         $this->assertIsFloat($items[1]);
         $this->assertEquals(1.1, $items[1]);
     }
@@ -53,27 +39,36 @@ class IntCaseCommandOptionFromTypeTest extends TestCase
     {
         $items = $this->command->getItemsFromType(99, 'string');
         $this->assertIsString($items[98]);
-        $this->assertEquals('99LuftBalloons', $items[98]);
+        $this->assertEquals('99', $items[98]);
     }
 
-    public function testGetItemsFromTypeMixedCaseString(): void
+    public function testGetItemsFromTypeNumericString(): void
     {
-        $items = $this->command->getItemsFromType(99, 'sTrInG');
+        $items = $this->command->getItemsFromType(99, 'num-string');
         $this->assertIsString($items[98]);
         $this->assertEquals('99LuftBalloons', $items[98]);
     }
 
-    public function testGetItemsFromTypeUnknownTypeInteger(): void
+    /**
+     * @@dataProvider badTypeProvider
+     */
+    public function testValidateFromBadType(string $input): void
     {
-        $items = $this->command->getItemsFromType(2, 'integer');
-        $this->assertIsInt($items[1]);
-        $this->assertEquals(2, $items[1]);
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->command->validateFromType($input);
     }
 
-    public function testGetItemsFromTypeTotallyMadeUp(): void
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public function badTypeProvider(): array
     {
-        $items = $this->command->getItemsFromType(2, 'FXKAwpozikr7');
-        $this->assertIsInt($items[1]);
-        $this->assertEquals(2, $items[1]);
+        return [
+            'from foo' => ['foo'],
+            'from sTRIng' => ['sTRIng'],
+            'from fLOAt' => ['fLOAt'],
+            'from made up word' => ['FXKAwpozikr7'],
+        ];
     }
 }

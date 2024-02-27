@@ -8,10 +8,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Stopwatch\Stopwatch;
 
-class IntCastCommand extends AbstractCastCommand
+class FloatCastCommand extends AbstractCastCommand
 {
-    protected static $defaultName = 'app:int-cast';
-    protected static $defaultDescription = 'Generate timings for casting integers via `(int)` and `intval()`';
+    protected static $defaultName = 'app:float-cast';
+    protected static $defaultDescription = 'Generate timings for casting floats via `(float)` and `floatval()`';
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -38,23 +38,23 @@ class IntCastCommand extends AbstractCastCommand
 
         for ($i = 0; $i < (int) $input->getOption('iterations'); $i++) {
             $stopwatch->reset();
-            $stopwatch->start('(int) cast');
+            $stopwatch->start('(float) cast');
             foreach ($items as $item) {
-                $tmp = (int)$item;
+                $tmp = (float)$item;
             }
-            $tradCastEvent = $stopwatch->stop('(int) cast');
+            $tradCastEvent = $stopwatch->stop('(float) cast');
 
             $stopwatch->reset();
-            $stopwatch->start('intval()');
+            $stopwatch->start('floatval()');
             foreach ($items as $item) {
-                $tmp = intval($item);
+                $tmp = floatval($item);
             }
-            $intvalCastEvent = $stopwatch->stop('intval()');
+            $floatvalCastEvent = $stopwatch->stop('floatval()');
 
             $this->createResults(
                 $input,
                 $output,
-                $intvalCastEvent,
+                $floatvalCastEvent,
                 $tradCastEvent
             );
         }

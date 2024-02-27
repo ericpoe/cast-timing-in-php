@@ -6,7 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class IntCaseCommandTest extends KernelTestCase
+class CaseCommandTest extends KernelTestCase
 {
     /** @var CommandTester $commandTester */
     private $commandTester;
@@ -51,7 +51,7 @@ class IntCaseCommandTest extends KernelTestCase
     /**
      * @dataProvider typeProvider
      */
-    public function testGetItemsFromType(string $type, string $expected): void
+    public function testGetItemsFromGoodType(string $type, string $expected): void
     {
         $this->commandTester->execute([
             'quantity' => 1,
@@ -72,11 +72,9 @@ class IntCaseCommandTest extends KernelTestCase
     {
         return [
             'from int' => ['int', 'int'],
-            'from foo' => ['foo', 'int'],
+            'from foo' => ['float', 'float'],
             'from string' => ['string', 'string'],
-            'from sTRIng' => ['sTRIng', 'string'],
-            'from float' => ['float', 'float'],
-            'from fLOAt' => ['fLOAt', 'float'],
+            'from num-string' => ['num-string', 'num-string'],
         ];
     }
 }
