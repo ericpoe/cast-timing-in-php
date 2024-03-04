@@ -73,7 +73,7 @@ abstract class AbstractCastCommand extends Command
 
         if ($type === 'float') {
             return array_map(function ($value) {
-                return (float) $value;
+                return $value;
             },
                 range(0.1, $quantity + 0.1));
         }
@@ -272,7 +272,6 @@ TPL;
 
     /**
      * @param int|float $number
-     * @return string
      */
     protected function getLocalizedNumber($number): string
     {
