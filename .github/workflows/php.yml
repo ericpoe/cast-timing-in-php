@@ -31,9 +31,12 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
+    - name: Doctrine Schema Validate
+      run: bin/console doctrine:schema:validate
+
     - name: PHP_CodeSniffer Check with Annotations
       uses: chekalsky/phpcs-action@v1.2.0
-  
+
     - name: PHPUnit (php-actions)
       uses: php-actions/phpunit@v3
       with:
@@ -42,4 +45,3 @@ jobs:
 
     - name: PHPStan (php-actions)
       uses: php-actions/phpstan@v3
-              
