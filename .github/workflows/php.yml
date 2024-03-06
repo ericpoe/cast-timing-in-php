@@ -37,14 +37,14 @@ jobs:
     - name: PHP_CodeSniffer Check with Annotations
       uses: chekalsky/phpcs-action@v1.2.0
 
+    - name: PHPStan (php-actions)
+      uses: php-actions/phpstan@v3
+      with:
+        php_extensions: intl
+
     - name: PHPUnit (php-actions)
       uses: php-actions/phpunit@v3
       with:
         version: 8.5.36
         php_extensions: intl, sqlite, pdo_sqlite
         configuration: phpunit.xml.dist
-
-    - name: PHPStan (php-actions)
-      uses: php-actions/phpstan@v3
-      with:
-          php_extensions: intl
