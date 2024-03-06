@@ -41,7 +41,7 @@ jobs:
       uses: php-actions/phpunit@v3
       with:
         version: 8.5.36
-        php_extensions: intl
+        php_extensions: intl, sqlite, pdo_sqlite
         configuration: phpunit.xml.dist
 
     - name: PHPStan (php-actions)
