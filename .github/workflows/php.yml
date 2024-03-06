@@ -46,5 +46,5 @@ jobs:
       uses: php-actions/phpunit@v3
       with:
         version: 8.5.36
-        php_extensions: intl sqlite pdo_sqlite
+        php_extensions: intl sqlite3 pdo_sqlite
         configuration: phpunit.xml.dist
