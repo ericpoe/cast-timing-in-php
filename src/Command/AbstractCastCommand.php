@@ -37,7 +37,6 @@ abstract class AbstractCastCommand extends Command
         $this
             ->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000')
             ->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1')
-            ->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results')
             ->addOption(
                 'from-type',
                 't',
@@ -45,6 +44,7 @@ abstract class AbstractCastCommand extends Command
                 'Cast from "int", "float", "string" or "num-string" (ex. "99LuftBalloons")',
                 'int'
             )
+            ->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results')
             ->addOption('use-db', null, InputOption::VALUE_OPTIONAL, 'Write to DB?', 'n')
         ;
     }
