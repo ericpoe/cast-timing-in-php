@@ -34,17 +34,19 @@ abstract class AbstractCastCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000');
-        $this->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1');
-        $this->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results');
-        $this->addOption(
-            'from-type',
-            't',
-            InputOption::VALUE_OPTIONAL,
-            'Cast from "int", "float", "string" or "num-string" (ex. "99LuftBalloons")',
-            'int'
-        );
-        $this->addOption('use-db', null, InputOption::VALUE_OPTIONAL, 'Write to DB?', 'n');
+        $this
+            ->addArgument('quantity', InputArgument::OPTIONAL, 'Amount of items to cast', '10000')
+            ->addOption('iterations', 'i', InputOption::VALUE_OPTIONAL, 'How many times to run this command', '1')
+            ->addOption('csv-path', 'p', InputOption::VALUE_OPTIONAL, 'Path to CSV file for writing results')
+            ->addOption(
+                'from-type',
+                't',
+                InputOption::VALUE_OPTIONAL,
+                'Cast from "int", "float", "string" or "num-string" (ex. "99LuftBalloons")',
+                'int'
+            )
+            ->addOption('use-db', null, InputOption::VALUE_OPTIONAL, 'Write to DB?', 'n')
+        ;
     }
 
     public function validateQuantity(int $quantity): int
