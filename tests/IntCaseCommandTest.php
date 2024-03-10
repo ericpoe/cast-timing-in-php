@@ -6,7 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class CaseCommandTest extends KernelTestCase
+class IntCaseCommandTest extends KernelTestCase
 {
     /** @var CommandTester $commandTester */
     private $commandTester;
@@ -60,9 +60,7 @@ class CaseCommandTest extends KernelTestCase
         $this->commandTester->assertCommandIsSuccessful();
 
         $output = $this->commandTester->getDisplay();
-        if (strtolower($type) !== 'float') {
-            $this->assertStringContainsString(sprintf('Creating an array of 1 %ss to cast', $expected), $output);
-        }
+        $this->assertStringContainsString(sprintf('Creating an array of 1 %ss to cast', $expected), $output);
     }
 
     /**
