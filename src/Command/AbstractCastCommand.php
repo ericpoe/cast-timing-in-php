@@ -47,9 +47,18 @@ abstract class AbstractCastCommand extends Command
         $this->addOption('use-db', null, InputOption::VALUE_OPTIONAL, 'Write to DB?', 'n');
     }
 
+    public function validateQuantity(int $quantity): int
+    {
+        if ($quantity <= 0) {
+            throw new \InvalidArgumentException('Quantity must be an integer greater than zero');
+        }
+
+        return $quantity;
+    }
+
     public function validateFromType(string $type): string
     {
-        $validTypes = ['float', 'int', 'string', 'num-string'];
+        $validTypes = ['bool', 'float', 'int', 'num-string', 'string'];
 
         if (!in_array($type, $validTypes)) {
             throw new \InvalidArgumentException(
@@ -65,7 +74,7 @@ abstract class AbstractCastCommand extends Command
     }
 
     /**
-     * @return array<int, int> | array<int, float> | array<int, string>
+     * @return array<int, int> | array<int, bool> | array<int, float> | array<int, string>
      */
     public function getItemsFromType(int $quantity, string $type = 'int'): array
     {
@@ -76,6 +85,16 @@ abstract class AbstractCastCommand extends Command
                 return $value;
             },
                 range(0.1, $quantity + 0.1));
+        }
+
+        if ($type === 'bool') {
+            $bools = [];
+            for ($i = 0; $i < $quantity; $i++) {
+                // alternate between true and false
+                $bools[] = !(($i % 2));
+            }
+
+            return $bools;
         }
 
         if ($type === 'string') {

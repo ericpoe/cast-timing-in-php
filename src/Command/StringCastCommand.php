@@ -22,7 +22,8 @@ class StringCastCommand extends AbstractCastCommand
     {
         $io = new SymfonyStyle($input, $output);
 
-        $quantity = (int)$input->getArgument('quantity');
+        $quantity_raw = (int) $input->getArgument('quantity');
+        $quantity = $this->validateQuantity($quantity_raw);
 
         /** @var string $input_type */
         $input_type = $input->getOption('from-type');
