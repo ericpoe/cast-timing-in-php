@@ -44,7 +44,7 @@ abstract class AbstractCastCommand extends Command
             'Cast from "int", "float", "string" or "num-string" (ex. "99LuftBalloons")',
             'int'
         );
-        $this->addOption('use-db', null, InputOption::VALUE_REQUIRED, 'Write to DB?', 'y');
+        $this->addOption('use-db', null, InputOption::VALUE_OPTIONAL, 'Write to DB?', 'n');
     }
 
     public function validateFromType(string $type): string
@@ -101,7 +101,9 @@ abstract class AbstractCastCommand extends Command
         StopwatchEvent $functionCastEvent,
         StopwatchEvent $tradCastEvent
     ): void {
-        if (strtolower($input->getOption('use-db')) === 'y') {
+        /** @var string $useDb */
+        $useDb = $input->getOption('use-db');
+        if (strtolower($useDb) === 'y') {
             $this->writeToDb($input, $functionCastEvent, $tradCastEvent);
         } elseif ($input->getOption('csv-path')) {
             $this->writeToCsv($input, $functionCastEvent, $tradCastEvent);
