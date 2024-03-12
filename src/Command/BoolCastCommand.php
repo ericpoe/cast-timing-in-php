@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -37,12 +38,17 @@ class BoolCastCommand extends AbstractCastCommand
                 $type
             )
         );
+
+        $iterations = (int)$input->getOption('iterations');
+        $progressBar = new ProgressBar($output, $iterations);
+        $progressBar->start();
+
         $items = $this->getItemsFromType($quantity, $type);
 
         $tmp = null;
         $stopwatch = new Stopwatch(true);
 
-        for ($i = 0; $i < (int) $input->getOption('iterations'); $i++) {
+        for ($i = 0; $i < $iterations; $i++) {
             $stopwatch->reset();
             $stopwatch->start('(bool) cast');
             foreach ($items as $item) {
@@ -63,7 +69,11 @@ class BoolCastCommand extends AbstractCastCommand
                 $boolvalCastEvent,
                 $tradCastEvent
             );
+
+            $progressBar->advance();
         }
+
+        $progressBar->finish();
 
         $io->success('Done');
 

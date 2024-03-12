@@ -9,7 +9,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 class RunAllCommand extends Command
 {
@@ -35,8 +34,6 @@ class RunAllCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
-
         $inputOptions = [
             'command' => null, // 'command' needs to be the first item in the array
             '--iterations' => $input->getOption('iterations'),
