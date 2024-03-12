@@ -45,6 +45,14 @@ class FloatCastCommand extends AbstractCastCommand
 
         $items = $this->getItemsFromType($quantity, $type);
 
+        $io->note(
+            sprintf(
+                'Casting an array of %s %ss to Float',
+                strtolower($this->getLocalizedNumber($quantity)),
+                $type
+            )
+        );
+
         $tmp = null;
         $stopwatch = new Stopwatch(true);
 

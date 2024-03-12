@@ -45,6 +45,14 @@ class IntCastCommand extends AbstractCastCommand
 
         $items = $this->getItemsFromType($quantity, $type);
 
+        $io->note(
+            sprintf(
+                'Casting an array of %s %ss to Integer',
+                strtolower($this->getLocalizedNumber($quantity)),
+                $type
+            )
+        );
+
         $tmp = null;
         $stopwatch = new Stopwatch(true);
 
