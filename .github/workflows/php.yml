@@ -28,18 +28,23 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
+    - name: Clear Composer Cache
+      run: rm var/cache -rf
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
     - name: PHP_CodeSniffer Check with Annotations
       uses: chekalsky/phpcs-action@v1.2.0
-  
-    - name: PHPUnit (php-actions)
-      uses: php-actions/phpunit@v3
-      with:
-        # What version of PHPUnit to use
-        version: '8.5.36'
 
     - name: PHPStan (php-actions)
       uses: php-actions/phpstan@v3
-              
+      with:
+        php_extensions: intl
+
+    - name: PHPUnit (php-actions)
+      uses: php-actions/phpunit@v3
+      with:
+        version: 8.5.36
+        php_extensions: intl sqlite3 pdo_sqlite
+        configuration: phpunit.xml.dist
